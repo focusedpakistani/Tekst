@@ -138,6 +138,11 @@ function renderChat() {
       </div>
 
       <form id="composeForm" class="flex items-end gap-2 relative">
+        <button type="button" class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-2 border-zinc-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all relative overflow-hidden">
+          <i data-lucide="paperclip" class="w-5 h-5"></i>
+          <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        </button>
+
         <button type="button" id="emojiToggleBtn" class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-2 border-zinc-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all">
           <i data-lucide="smile" class="w-5 h-5"></i>
         </button>
@@ -151,6 +156,10 @@ function renderChat() {
           ></textarea>
         </div>
         
+        <button type="button" id="micBtn" class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-red-500 border-2 border-zinc-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all select-none">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+        </button>
+
         <button type="submit" class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl bg-purple-brand text-white border-2 border-zinc-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-purple-600 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] transition-all">
           <i data-lucide="send" class="w-5 h-5"></i>
         </button>
@@ -162,6 +171,7 @@ function renderChat() {
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     state.user = null
+    localStorage.removeItem('tekst_user')
     renderLogin()
   })
 
@@ -196,6 +206,57 @@ function renderChat() {
   })
 
   composeForm.addEventListener('submit', handleSendMessage)
+  
+  // Media Input
+  const mediaInput = document.getElementById('mediaInput')
+  if(mediaInput) {
+    mediaInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      uploadMedia(file, file.type.startsWith('video/') ? 'video' : 'image')
+    })
+  }
+
+  // Voice Recording
+  let mediaRecorder;
+  let audioChunks = [];
+  const micBtn = document.getElementById('micBtn')
+  if(micBtn) {
+    micBtn.addEventListener('mousedown', startRecording)
+    micBtn.addEventListener('touchstart', startRecording, { passive: false })
+    micBtn.addEventListener('mouseup', stopRecording)
+    micBtn.addEventListener('touchend', stopRecording)
+  }
+
+  async function startRecording(e) {
+    e.preventDefault()
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        mediaRecorder = new MediaRecorder(stream)
+        audioChunks = []
+        mediaRecorder.ondataavailable = event => audioChunks.push(event.data)
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+          const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
+          uploadMedia(file, 'voice')
+        }
+        mediaRecorder.start()
+        micBtn.classList.add('bg-red-200', 'dark:bg-red-900', 'animate-pulse')
+      } catch (err) {
+        console.error('Mic error:', err)
+      }
+    }
+  }
+
+  function stopRecording(e) {
+    e.preventDefault()
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop()
+      mediaRecorder.stream.getTracks().forEach(track => track.stop())
+      micBtn.classList.remove('bg-red-200', 'dark:bg-red-900', 'animate-pulse')
+    }
+  }
   
   fetchMessages()
   setupRealtime()
@@ -232,32 +293,13 @@ async function handleLogin(e) {
     if (data) {
       if (data.password === password) {
         state.user = data
+        localStorage.setItem('tekst_user', JSON.stringify(data))
         renderChat()
       } else {
         errorDisplay.textContent = 'Incorrect password.'
       }
     } else {
-      // Auto-register
-      const { data: newUser, error: insertError } = await supabaseClient
-        .from('users')
-        .insert([{ 
-          username, 
-          password,
-          avatar_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${username}`
-        }])
-        .select()
-        .single()
-
-      if (insertError) {
-        if (insertError.code === '23505') {
-          errorDisplay.textContent = 'Username already taken.'
-        } else {
-          errorDisplay.textContent = 'Registration failed.'
-        }
-      } else {
-        state.user = newUser
-        renderChat()
-      }
+      errorDisplay.textContent = 'User not found. Registration is closed.'
     }
   } catch (err) {
     errorDisplay.textContent = 'Database error.'
@@ -279,6 +321,44 @@ async function fetchMessages() {
   if (!error && data) {
     state.messages = data
     renderMessages()
+  }
+}
+
+async function uploadMedia(file, type) {
+  state.isLoading = true
+  const fileExt = file.name.split('.').pop() || 'webm'
+  const fileName = `${state.user.id}-${Date.now()}.${fileExt}`
+  const filePath = `${fileName}`
+
+  try {
+    const { error: uploadError } = await supabaseClient.storage
+      .from('chat_media')
+      .upload(filePath, file)
+    
+    if (uploadError) throw uploadError
+    
+    const { data: publicUrlData } = supabaseClient.storage
+      .from('chat_media')
+      .getPublicUrl(filePath)
+      
+    const mediaUrl = publicUrlData.publicUrl
+
+    // Send message
+    const replyId = state.replyTo ? state.replyTo.id : null
+    state.replyTo = null
+    const replyWrapper = document.getElementById('replyPreviewWrapper')
+    if(replyWrapper) replyWrapper.classList.add('hidden')
+
+    await supabaseClient.from('messages').insert([{
+      user_id: state.user.id,
+      message_type: type,
+      media_url: mediaUrl,
+      reply_to_id: replyId
+    }])
+  } catch(err) {
+    console.error('Upload failed:', err)
+  } finally {
+    state.isLoading = false
   }
 }
 
@@ -341,6 +421,7 @@ async function handleSendMessage(e) {
   try {
     const { error } = await supabaseClient.from('messages').insert([{
       user_id: state.user.id,
+      message_type: 'text',
       text_content: text,
       reply_to_id: replyId
     }])
@@ -412,6 +493,15 @@ function renderMessages() {
       html += `<div class="w-8 mr-2"></div>`
     }
 
+    let mediaHtml = ''
+    if (msg.message_type === 'image' && msg.media_url) {
+      mediaHtml = `<img src="${msg.media_url}" class="rounded-xl max-w-full max-h-64 object-cover mt-1" />`
+    } else if (msg.message_type === 'video' && msg.media_url) {
+      mediaHtml = `<video src="${msg.media_url}" controls class="rounded-xl max-w-full max-h-64 mt-1"></video>`
+    } else if (msg.message_type === 'voice' && msg.media_url) {
+      mediaHtml = `<audio src="${msg.media_url}" controls class="w-48 mt-1"></audio>`
+    }
+
     html += `
       <div class="relative group max-w-full">
         <div class="px-4 py-2.5 rounded-2xl shadow-sm text-[15px] leading-relaxed break-words ${
@@ -419,7 +509,10 @@ function renderMessages() {
             ? 'bg-purple-brand text-white rounded-br-sm' 
             : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-bl-sm'
         } ${msg.is_pending ? 'opacity-70' : ''}">
-          <div class="prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-pre:my-2">${parsedText}</div>
+          <div class="prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-pre:my-2">
+            ${parsedText}
+            ${mediaHtml}
+          </div>
         </div>
       </div>
     `
@@ -432,4 +525,10 @@ function renderMessages() {
 }
 
 // Initial App State
-renderLogin()
+const savedUser = localStorage.getItem('tekst_user')
+if (savedUser) {
+  state.user = JSON.parse(savedUser)
+  renderChat()
+} else {
+  renderLogin()
+}
