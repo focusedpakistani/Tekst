@@ -350,7 +350,7 @@ async function uploadMedia(file, type) {
     if(replyWrapper) replyWrapper.classList.add('hidden')
 
     await supabaseClient.from('messages').insert([{
-      user_id: state.user.id,
+      sender_id: state.user.id,
       message_type: type,
       media_url: mediaUrl,
       reply_to_id: replyId
@@ -370,13 +370,13 @@ function setupRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async (payload) => {
       if (payload.eventType === 'INSERT') {
         // Fetch user data for the new message
-        const { data: userData } = await supabaseClient.from('users').select('username, avatar_url').eq('id', payload.new.user_id).single()
+        const { data: userData } = await supabaseClient.from('users').select('username, avatar_url').eq('id', payload.new.sender_id).single()
         if (userData) {
           const newMsg = { ...payload.new, users: userData }
           state.messages.push(newMsg)
           renderMessages()
           
-          if (newMsg.user_id !== state.user.id) {
+          if (newMsg.sender_id !== state.user.id) {
             playSound('receive')
           }
         }
@@ -396,7 +396,7 @@ async function handleSendMessage(e) {
   const tempId = 'temp-' + Date.now()
   const newMsg = {
     id: tempId,
-    user_id: state.user.id,
+    sender_id: state.user.id,
     text_content: text,
     created_at: new Date().toISOString(),
     users: {
@@ -420,7 +420,7 @@ async function handleSendMessage(e) {
 
   try {
     const { error } = await supabaseClient.from('messages').insert([{
-      user_id: state.user.id,
+      sender_id: state.user.id,
       message_type: 'text',
       text_content: text,
       reply_to_id: replyId
@@ -443,9 +443,9 @@ function renderMessages() {
   // Filter out pending messages that already have a real equivalent (same user and text within last few seconds)
   
   uniqueMessages.forEach((msg, idx) => {
-    const isMyMsg = msg.user_id === state.user.id
+    const isMyMsg = msg.sender_id === state.user.id
     const prevMsg = idx > 0 ? uniqueMessages[idx - 1] : null
-    const showAvatar = !isMyMsg && (!prevMsg || prevMsg.user_id !== msg.user_id)
+    const showAvatar = !isMyMsg && (!prevMsg || prevMsg.sender_id !== msg.sender_id)
     
     // Convert markdown using marked.js
     const parsedText = marked.parse(msg.text_content || '')
