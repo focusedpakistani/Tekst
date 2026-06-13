@@ -719,7 +719,7 @@ function renderMessages() {
     const prevMsg = idx > 0 ? filtered[idx - 1] : null
     const showAvatar = !isMyMsg && (!prevMsg || prevMsg.sender_id !== msg.sender_id)
     
-    let parsedText = msg.is_deleted ? '<i class="text-zinc-500">This message was deleted</i>' : marked.parse(msg.text_content || '')
+    let parsedText = msg.is_deleted ? '<i class="text-zinc-500">This message was burned❤️‍🔥.</i>' : marked.parse(msg.text_content || '')
 
     const div = document.createElement('div')
     div.className = `flex w-full ${isMyMsg ? 'justify-end pl-12' : 'justify-start pr-12'} mb-2 animate-in slide-in-from-bottom-2`
