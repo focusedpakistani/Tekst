@@ -1,0 +1,60 @@
+:root {
+  --accent-color: #DDFFB2;
+  --accent-text: #55056D;
+}
+.bg-lime-brand {
+  background-color: var(--accent-color);
+}
+
+.text-lime-brand {
+  color: var(--accent-color);
+}
+
+.border-lime-brand {
+  border-color: var(--accent-color);
+}
+
+.bg-purple-brand {
+  background-color: var(--accent-text);
+}
+
+.text-purple-brand {
+  color: var(--accent-text);
+}
+
+.border-purple-brand {
+  border-color: var(--accent-text);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Wallpapers */
+.wallpaper-flat {
+  background-color: #09090b;
+}
+
+.wallpaper-grid {
+  background-color: #0f0c1b;
+  background-image: radial-gradient(circle, rgba(221, 255, 178, 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.wallpaper-blueprint {
+  background-color: #022340;
+  background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.wallpaper-gradient {
+  background: radial-gradient(at 0% 0%, rgba(85, 5, 109, 0.3) 0px, transparent 50%),
+              radial-gradient(at 50% 0%, rgba(221, 255, 178, 0.2) 0px, transparent 50%),
+              radial-gradient(at 100% 0%, rgba(85, 5, 109, 0.3) 0px, transparent 50%),
+              #0a0814;
+}
