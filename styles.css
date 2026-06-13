@@ -2,6 +2,7 @@
   --accent-color: #DDFFB2;
   --accent-text: #55056D;
 }
+
 .bg-lime-brand {
   background-color: var(--accent-color);
 }
@@ -48,13 +49,172 @@
 
 .wallpaper-blueprint {
   background-color: #022340;
-  background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .wallpaper-gradient {
   background: radial-gradient(at 0% 0%, rgba(85, 5, 109, 0.3) 0px, transparent 50%),
-              radial-gradient(at 50% 0%, rgba(221, 255, 178, 0.2) 0px, transparent 50%),
-              radial-gradient(at 100% 0%, rgba(85, 5, 109, 0.3) 0px, transparent 50%),
-              #0a0814;
+    radial-gradient(at 50% 0%, rgba(221, 255, 178, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(85, 5, 109, 0.3) 0px, transparent 50%),
+    #0a0814;
+}
+
+/* Settings Modal */
+#settingsModal {
+  backdrop-filter: blur(10px);
+}
+
+/* Context Menu */
+.context-menu {
+  animation: contextMenuPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transform-origin: top left;
+}
+@keyframes contextMenuPop {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Custom Audio Player */
+.custom-audio-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.1);
+  padding: 8px;
+  border-radius: 9999px;
+  min-width: 200px;
+}
+.dark .custom-audio-player {
+  background: rgba(255,255,255,0.1);
+}
+.audio-progress {
+  flex-grow: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(100,100,100,0.3);
+  border-radius: 4px;
+  outline: none;
+}
+.audio-progress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-text);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Voice Recording Animation (Tidy Walrus style) */
+.recording-waves {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 24px;
+}
+.recording-waves .wave {
+  width: 4px;
+  background-color: #ef4444; /* red-500 */
+  border-radius: 999px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+.recording-waves .wave:nth-child(1) { height: 40%; animation-delay: -1.2s; }
+.recording-waves .wave:nth-child(2) { height: 80%; animation-delay: -1.0s; }
+.recording-waves .wave:nth-child(3) { height: 100%; animation-delay: -0.8s; }
+.recording-waves .wave:nth-child(4) { height: 60%; animation-delay: -0.6s; }
+.recording-waves .wave:nth-child(5) { height: 30%; animation-delay: -0.4s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1); }
+}
+
+/* Burnout Progress Bar */
+.burnout-bar {
+  height: 3px;
+  background: rgba(255,0,0,0.8);
+  border-radius: 0 0 2px 2px;
+  transition: width 1s linear;
+}
+
+/* Fullscreen Lightbox */
+#lightbox {
+  backdrop-filter: blur(15px);
+  transition: opacity 0.3s ease;
+}
+
+/* Floating Action Button (Scroll down) */
+#scrollToBottomBtn {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#scrollToBottomBtn.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Search Bar Slider */
+#searchBarWrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+#searchBarWrapper.open {
+  max-height: 60px;
+}
+
+/* Pinned Messages Banner */
+#pinnedBanner {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+#pinnedBanner.visible {
+  max-height: 100px;
+  opacity: 1;
+}
+
+/* Typing Indicator Dots */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #888;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typing {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Code Block Styling */
+.prose pre {
+  background-color: #1e1e24 !important;
+  color: #f8f8f2 !important;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid #333;
+}
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85em;
+}
+
+/* Clickable Links */
+.prose a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.dark .prose a {
+  color: var(--accent-color);
 }
